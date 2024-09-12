@@ -22,6 +22,7 @@ DETECTION_THRESHOLD = 0.60
 RECT_COLOR = (255, 0, 0)
 
 vcaps = [get_vcap(channel=i+1) for i in range(NUM_CHANNELS)]
+# vcaps = [cv.VideoCapture(0, cv.CAP_DSHOW) for _ in range(NUM_CHANNELS)]
 bg_substractors = [cv.bgsegm.createBackgroundSubtractorMOG(history=100, nmixtures=3, backgroundRatio=0.95, noiseSigma=10) for _ in range(NUM_CHANNELS)]
 prv_max_idx = -1
 
@@ -76,7 +77,7 @@ def bound_white_space():
                 if ch_counts[current_max_idx] > COUNT_THRESHOLD:
                     if prv_max_idx == -1 or (current_max_idx != prv_max_idx and ch_counts[current_max_idx] >= FRAME_SWITCH_THRESHOLD * ch_counts[prv_max_idx]):
                         prv_max_idx = current_max_idx
-
+                        
                     x, y, w, h = cv.boundingRect(masks[prv_max_idx])
                     bounded_rect = frames_buffer[prv_max_idx][0][y:y+h, x:x+w]
                     with bound_modify_lock:
@@ -136,10 +137,9 @@ try:
         with fg_bf_modify_lock:
             combined_bg = np.hstack([np.hstack(( SPACE_COL2, cv.cvtColor(fgMasks_buffer[i].popleft(), cv.COLOR_GRAY2BGR))) if len(fgMasks_buffer[i]) != 0 else np.hstack(( SPACE_COL2, SPACE2)) for i in range(NUM_CHANNELS)])
         
-        bounded_frame = np.hstack(( SPACE_COL2, SPACE2,  SPACE_COL2, frames_buffer[4].popleft()[80:, :, :] if len(frames_buffer[4]) != 0  else SPACE2, SPACE_COL2, cv.putText(fgMasks_buffer[4].popleft(), f'Ch {prv_max_idx + 1}', fontFace=cv.FONT_HERSHEY_DUPLEX, fontScale=2, color=(255, 255, 255), bottomLeftOrigin=False, org=(int(frames_buffer[0][0].get(cv.CAP_PROP_FRAME_WIDTH)) - 200, 80), thickness=2, lineType=cv.LINE_AA) if len(fgMasks_buffer[4]) != 0  else SPACE2, SPACE_COL2, SPACE2))
+        bounded_frame = np.hstack((SPACE_COL2, SPACE2,  SPACE_COL2, frames_buffer[4].popleft()[80:, :, :] if len(frames_buffer[4]) != 0 else SPACE2, SPACE_COL2, cv.cvtColor(cv.putText(fgMasks_buffer[4].popleft() if len(fgMasks_buffer[4]) != 0 else SPACE2, f'Ch {prv_max_idx + 1}', fontFace=cv.FONT_HERSHEY_DUPLEX, fontScale=2, color=(255, 255, 255), bottomLeftOrigin=False,  org=(int(vcaps[0].get(cv.CAP_PROP_FRAME_WIDTH)) - 200, 80), thickness=2, lineType=cv.LINE_AA), cv.COLOR_GRAY2BGR) if len(fgMasks_buffer[4]) != 0 else SPACE2, SPACE_COL2, SPACE2))
         big_frame = np.vstack(( SPACE_ROW, combined_frame, SPACE_ROW, combined_bg, SPACE_ROW, bounded_frame))
         # big_frame = np.vstack(( SPACE_ROW, combined_frame, SPACE_ROW, combined_bg, SPACE_ROW))
-
         cv.imshow('Multi-Channel Video Feed', imutils.resize(big_frame, width=1550))
 
         if cv.waitKey(20) & 0xFF == ord('q'):
