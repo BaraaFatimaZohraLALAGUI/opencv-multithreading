@@ -5,6 +5,7 @@ import threading
 from collections import deque
 import imutils
 from yolo_api import detect
+import ffmpegcv 
 
 def get_vcap(channel):
     ip = "10.1.67.111"
@@ -13,7 +14,7 @@ def get_vcap(channel):
     PASS = "C@meraUSTO"
     RTSP_LINK = f"rtsp://{USER}:{PASS}@{ip}:{RTSP_PORT}/cam/realmonitor?channel={channel}&subtype=0"
     os.environ["OPENCV_FFMPEG_CAPTURE_OPTIONS"] = "rtsp_transport;udp"
-    return cv.VideoCapture(RTSP_LINK, cv.CAP_FFMPEG)
+    return ffmpegcv.VideoCaptureStreamRT(RTSP_LINK)
 
 NUM_CHANNELS = 4
 COUNT_THRESHOLD = 100
@@ -23,7 +24,7 @@ RECT_COLOR = (255, 0, 0)
 
 vcaps = [get_vcap(channel=i+1) for i in range(NUM_CHANNELS)]
 # vcaps = [cv.VideoCapture(0, cv.CAP_DSHOW) for _ in range(NUM_CHANNELS)]
-bg_substractors = [cv.bgsegm.createBackgroundSubtractorMOG(history=100, nmixtures=3, backgroundRatio=0.95, noiseSigma=10) for _ in range(NUM_CHANNELS)]
+bg_substractors = [cv.bgsegm.createBackgroundSubtractorMOG(history=200, nmixtures=3, backgroundRatio=0.95, noiseSigma=10) for _ in range(NUM_CHANNELS)]
 prv_max_idx = -1
 
 SPACE_COL = np.ones((int(vcaps[0].get(cv.CAP_PROP_FRAME_HEIGHT)), 20, 3), dtype=np.uint8) * 255
