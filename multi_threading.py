@@ -5,7 +5,6 @@ import threading
 from collections import deque
 import imutils
 from yolo_api import detect
-import ffmpegcv 
 
 def get_vcap(channel):
     ip = "10.1.67.111"
@@ -14,7 +13,7 @@ def get_vcap(channel):
     PASS = "C@meraUSTO"
     RTSP_LINK = f"rtsp://{USER}:{PASS}@{ip}:{RTSP_PORT}/cam/realmonitor?channel={channel}&subtype=0"
     os.environ["OPENCV_FFMPEG_CAPTURE_OPTIONS"] = "rtsp_transport;udp"
-    return ffmpegcv.VideoCaptureStreamRT(RTSP_LINK)
+    return cv.VideoCapture(RTSP_LINK, cv.CAP_FFMPEG)
 
 NUM_CHANNELS = 4
 COUNT_THRESHOLD = 100
@@ -120,15 +119,6 @@ try:
 
         all_frames_ready = any(len(frames_buffer[i]) > 0 for i in range(NUM_CHANNELS))
         all_fgMasks_ready = any(len(fgMasks_buffer[i]) > 0 for i in range(NUM_CHANNELS))
-
-        for fb in frames_buffer:
-            print (f'--------------------------- {len(fb)}', end=' ')
-        print ()
-        for fgb in fgMasks_buffer:
-            print (f'>>>>>>>>>>>>>>>>>>>>>>>>>>> {len(fgb)}', end=' ')
-        
-        
-        print()
 
         if not (all_frames_ready and all_fgMasks_ready):
             continue
