@@ -2,12 +2,13 @@ import cv2
 from ultralytics import YOLO
 
 
-def detect(frame, detection_threshold, rect_color, model_name = 'YOLOv9 Tiny'):
+def detect(x, y, w, h, frame, detection_threshold, rect_color, model_name = 'YOLOv9 Tiny'):
     # Get class names 
     model = load_model (model_name)
     class_names = model.names
     people_found = False
-    result = model (frame, save=False, verbose=False) ## Inference 
+    bounded_rect = frame[y:y + h ,x :x + w, :]
+    result = model (bounded_rect, save=False, verbose=False) ## Inference 
 
     if len (result[0]): # If no objects have been detected 
         for i in range (len (result[0].boxes.xyxy)): # Iterate over the objects in a single image
@@ -17,9 +18,10 @@ def detect(frame, detection_threshold, rect_color, model_name = 'YOLOv9 Tiny'):
             people_found = True
 
             x1, y1, x2, y2 = map(int, result[0].boxes.xyxy[i].tolist())
-            cv2.rectangle(frame, (x1, y1), (x2, y2), rect_color, 2)
+            frame = cv2.rectangle(frame, (x1, y1), (x2, y2), rect_color, 2)
             
-    return people_found
+
+    return people_found, frame
 
 
     
